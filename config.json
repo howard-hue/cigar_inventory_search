@@ -86,7 +86,7 @@
       "only_cigar_related": true,
       "enabled": true,
       "max_pages": null
-    },
+    }
    
   ],
   "filters": {
