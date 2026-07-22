@@ -40,19 +40,7 @@
       "enabled": true,
       "max_pages": 10
     },
-    {
-      "id": "falkum",
-      "display_name": "Falkum",
-      "base_url": "https://www.falkum.de",
-      "adapter": "magento2",
-      "currency": "EUR",
-      "only_cigar_related": false,
-      "enabled": true,
-      "max_pages": 18,
-      "adapter_options": {
-        "page_size": 48
-      }
-    },
+    
     {
       "id": "selected-cigars",
       "display_name": "Selected Cigars",
@@ -99,27 +87,7 @@
       "enabled": true,
       "max_pages": null
     },
-    {
-      "id": "siglomundo",
-      "display_name": "Siglo Mundo",
-      "base_url": "https://siglomundo.ch",
-      "adapter": "shopify",
-      "currency": "CHF",
-      "only_cigar_related": true,
-      "enabled": true,
-      "max_pages": null
-    }
-    ,
-    {
-      "id": "70cigars",
-      "display_name": "70 Cigars",
-      "base_url": "https://70cigars.com/",
-      "adapter": "shopify",
-      "currency": "USD",
-      "only_cigar_related": true,
-      "enabled": true,
-      "max_pages": null
-    }
+   
   ],
   "filters": {
     "brands": [],
