@@ -31,3 +31,15 @@ jobs:
       - name: Run Inventory Monitor
         run: |
           python run_inventory.py
+
+      - name: List Generated Files
+        run: |
+          find . -type f | sort
+
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: inventory-report
+          path: |
+            inventory_*.csv
+            inventory_*.html
