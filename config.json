@@ -101,7 +101,7 @@
     "Montecristo",
     "Partagas",
     "Romeo y Julieta",
-    "Davidoff",
+
     "H. Upmann",
     "Hoyo",
     "Bolivar",
@@ -109,10 +109,8 @@
     "Punch",
     "Quai d'Orsay",
     "Ramón Allones",
-    "Ramon Allones",
-    "Oliva",
-    "Rocky Patel",
-    "Plasencia"
+
+
   ],
   "tariff_rate": 0.5,
   "include_unavailable": false
