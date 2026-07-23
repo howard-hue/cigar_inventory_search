@@ -2,6 +2,7 @@ from pathlib import Path
 import glob
 from notifier.storage import load_latest, save_latest
 from notifier.compare import compare
+from notifier.csv_reader import load_csv 
 
 def newest_csv() -> Path | None:
     files = glob.glob("inventory_*.csv")
@@ -22,7 +23,7 @@ def main():
         print("没有找到 inventory csv")
         return
 
-    from notifier.csv_reader import load_csv 
+
     rows = load_csv(csv_file)
     previous = load_latest()
     print(f"上次商品数：{len(previous)}")
@@ -32,9 +33,21 @@ def main():
         save_latest(rows)
         return
     changes = compare(previous, rows)
+
     print(f"新增商品：{len(changes.new)}")
     print(f"下架商品：{len(changes.removed)}")
     print(f"价格变化：{len(changes.price_changed)}")
+
+    if changes.new:
+        print()
+        print("====== 新增商品 ======")
+        for item in changes.new[:10]:
+            print(item["网站"])
+            print(item["产品名称"])
+            print(item["人民币税后"])
+            print(item["链接"])
+            print("------------------")
+
     save_latest(rows)
 
 
