@@ -67,16 +67,15 @@ def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
     seen: set[str] = set()
     n = 0
     for i, loc in enumerate(locs):
-    if i < 30:
-        print("检查:", loc)
-
-    if n >= max_items:
-        break
-
-    if not _is_product_url(loc, netloc):
         if i < 30:
-            print("过滤:", loc)
-        continue
+            print("检查:", loc)
+        if n >= max_items:
+            break
+
+        if not _is_product_url(loc, netloc):
+            if i < 30:
+                print("过滤:", loc)
+            continue
     
         if loc in seen:
             continue
