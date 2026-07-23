@@ -30,9 +30,12 @@ def main():
     print(f"上次商品数：{len(previous)}")
     print(f"本次商品数：{len(rows)}")# 第一次运行
     if len(previous) == 0:
+        from notifier.feishu import send_text
+        send_text("🚀 飞书机器人测试成功！")
         print("第一次运行，不发送通知。")
         save_latest(rows)
         return
+    
     changes = compare(previous, rows)
 
     print(f"新增商品：{len(changes.new)}")
