@@ -16,20 +16,28 @@ def _is_product_url(loc: str, base_netloc: str) -> bool:
         u = urlparse(loc)
     except Exception:
         return False
+        
     if u.netloc != base_netloc:
         return False
     path = (u.path or "").lower()
-    if path.endswith("/"):
-        path = path[:-1]
-    parts = [p for p in path.split("/") if p]
-    if len(parts) < 2:
+
+    
+    if path.endswith((".jpg", ".png", ".jpeg", ".gif", ".webp")):
         return False
-    # 排除纯分类页：常见为 /en/category 两段；商品多为多段且含数字段
-    if re.search(r"-\d+\.html$", path) or re.search(r"/\d+-[\w-]+\.html$", path):
-        return True
-    if re.search(r"/\d+[\w-]*\.html$", path):
-        return True
-    return len(parts) >= 3 and path.endswith(".html")
+
+    # 排除分类页
+    if "/category" in path:
+        return False
+
+    if "/manufacturer" in path:
+        return False
+
+    if "/brand" in path:
+        return False
+
+    # 商品一般至少两级目录
+    return len(path.strip("/").split("/")) >= 2
+
 
 
 def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
@@ -42,6 +50,7 @@ def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
     except Exception:
         return
     locs = parse_sitemap_locs(xml)
+    print(f"{site.display_name}: sitemap 共解析到 {len(locs)} 个URL")
     if not locs and "<sitemapindex" in xml.lower():
         try:
             root = ET.fromstring(xml)
@@ -57,11 +66,18 @@ def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
                     continue
     seen: set[str] = set()
     n = 0
-    for loc in locs:
-        if n >= max_items:
-            break
-        if not _is_product_url(loc, netloc):
-            continue
+    for i, loc in enumerate(locs):
+    if i < 30:
+        print("检查:", loc)
+
+    if n >= max_items:
+        break
+
+    if not _is_product_url(loc, netloc):
+        if i < 30:
+            print("过滤:", loc)
+        continue
+    
         if loc in seen:
             continue
         seen.add(loc)
@@ -101,6 +117,7 @@ def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
             "inventory_quantity": None,
         }
         n += 1
+        print("找到商品:", title)
         yield {
             "title": title,
             "handle": handle,
