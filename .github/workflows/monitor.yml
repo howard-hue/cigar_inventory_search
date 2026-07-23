@@ -32,6 +32,12 @@ jobs:
         run: |
           python run_inventory.py
 
+      - name: Run Notifier
+        env:
+          FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+        run: |
+          python notifier/main.py
+
       - name: List Generated Files
         run: |
           find . -type f | sort
@@ -43,9 +49,3 @@ jobs:
           path: |
             inventory_*.csv
             inventory_*.html
-            
-      - name: Send Test Message
-        env:
-          FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
-        run: |
-          python send_feishu.py
