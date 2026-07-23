@@ -20,7 +20,9 @@ def main():
         print("没有找到 inventory csv")
         return
 
-    print(f"读取: {csv_file}")
+    from notifier.csv_reader import load_csv 
+    rows = load_csv(csv_file)
+    print(f"读取 {len(rows)} 条商品")
 
 
 if __name__ == "__main__":
