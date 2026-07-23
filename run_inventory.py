@@ -13,10 +13,7 @@ import urllib.error
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
-from notifier.storage import (
-    rotate_latest,
-    save_latest,
-)
+
 
 from cigar_inventory.export_report import (
     compare_labels_for_rows,
@@ -90,9 +87,9 @@ def main() -> int:
 
     try:
         cfg = load_config(args.config)
-        rotate_latest()      # 把旧 latest 备份成 previous
+
         rows = collect_rows(cfg)
-        save_latest(rows)    # 保存新的 latest
+
 
     except urllib.error.HTTPError as e:
         print(f"HTTP 错误: {e.code} {e.reason}", file=sys.stderr)
