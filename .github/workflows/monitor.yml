@@ -36,7 +36,7 @@ jobs:
         env:
           FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
         run: |
-          python notifier/main.py
+          python -m notifier.main
 
       - name: List Generated Files
         run: |
