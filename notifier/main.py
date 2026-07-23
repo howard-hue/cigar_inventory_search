@@ -1,5 +1,6 @@
 from pathlib import Path
 import glob
+from notifier.storage import load_latest, save_latest
 
 def newest_csv() -> Path | None:
     files = glob.glob("inventory_*.csv")
@@ -22,7 +23,11 @@ def main():
 
     from notifier.csv_reader import load_csv 
     rows = load_csv(csv_file)
-    print(f"读取 {len(rows)} 条商品")
+    previous = load_latest()
+    print(f"上次商品数：{len(previous)}")
+    print(f"本次商品数：{len(rows)}")
+    save_latest(rows)
+    print("已更新 latest.json")
 
 
 if __name__ == "__main__":
