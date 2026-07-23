@@ -1,34 +1,70 @@
-from __future__ import annotations
-
 import os
+import json
 import requests
 
 
-def send_text(message: str) -> None:
-    """
-    发送飞书机器人文本消息
-    """
+def send_new_products(products):
 
-    webhook = os.getenv("FEISHU_WEBHOOK")
-
-    if not webhook:
-        print("未配置 FEISHU_WEBHOOK")
+    if not products:
         return
 
-    payload = {
-        "msg_type": "text",
-        "content": {
-            "text": message
+    webhook = os.environ.get("FEISHU_WEBHOOK")
+
+    if not webhook:
+        print("没有配置 FEISHU_WEBHOOK")
+        return
+
+    elements = []
+
+    elements.append({
+        "tag": "markdown",
+        "content": f"## 🎉 检测到 **{len(products)}** 个新品"
+    })
+
+    for item in products[:10]:
+
+        elements.append({
+            "tag": "hr"
+        })
+
+        elements.append({
+            "tag": "markdown",
+            "content":
+                f"**{item['产品名称']}**\n\n"
+                f"🏪 {item['网站']}\n\n"
+                f"💰 ¥{item['人民币税后']}"
+        })
+
+        elements.append({
+            "tag": "action",
+            "actions": [
+                {
+                    "tag": "button",
+                    "text": {
+                        "tag": "plain_text",
+                        "content": "打开商品"
+                    },
+                    "url": item["链接"],
+                    "type": "primary"
+                }
+            ]
+        })
+
+    body = {
+        "msg_type": "interactive",
+        "card": {
+            "header": {
+                "template": "green",
+                "title": {
+                    "tag": "plain_text",
+                    "content": "雪茄上新通知"
+                }
+            },
+            "elements": elements
         }
     }
 
-    r = requests.post(
-        webhook,
-        json=payload,
-        timeout=20,
-    )
+    r = requests.post(webhook, json=body, timeout=20)
 
-    print(f"飞书返回：{r.status_code}")
-
-    if r.status_code != 200:
-        print(r.text)
+    print(r.status_code)
+    print(r.text)
