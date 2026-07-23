@@ -39,15 +39,22 @@ def main():
     print(f"下架商品：{len(changes.removed)}")
     print(f"价格变化：{len(changes.price_changed)}")
 
-    if changes.new:
-        print()
-        print("====== 新增商品 ======")
-        for item in changes.new[:10]:
-            print(item["网站"])
-            print(item["产品名称"])
-            print(item["人民币税后"])
-            print(item["链接"])
-            print("------------------")
+
+    ##if changes.new:
+    if True:    
+        message = f"🎉 检测到 {len(changes.new)} 个新品\n\n"
+        for i, item in enumerate(changes.new[:10], start=1):
+            message += (
+                f"{i}. {item['产品名称']}\n"
+                f"🏪 {item['网站']}\n"
+                f"💰 ¥{item['人民币税后']}\n"
+                f"🔗 {item['链接']}\n\n"
+        )
+
+    if len(changes.new) > 10:
+        message += f"...还有 {len(changes.new)-10} 个新品"
+
+    send_text(message)
 
     save_latest(rows)
     send_text("✅ 飞书机器人测试成功")
