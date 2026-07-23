@@ -3,6 +3,7 @@ import glob
 from notifier.storage import load_latest, save_latest
 from notifier.compare import compare
 from notifier.csv_reader import load_csv 
+from notifier.feishu import send_text
 
 def newest_csv() -> Path | None:
     files = glob.glob("inventory_*.csv")
@@ -49,7 +50,7 @@ def main():
             print("------------------")
 
     save_latest(rows)
-
+    send_text("✅ 飞书机器人测试成功")
 
 if __name__ == "__main__":
     main()
