@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 from cigar_inventory.config_loader import SiteConfig
 from cigar_inventory.http_util import fetch_text
-
+from cigar_inventory.cuban_filter import is_cuban_cigar_product
 from cigar_inventory.adapters.scrape_util import (
     extract_json_ld_products,
     parse_sitemap_locs,
