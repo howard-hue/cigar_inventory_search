@@ -30,16 +30,6 @@
       "enabled": true,
       "max_pages": 8
     },
-    {
-      "id": "tabak-traeber",
-      "display_name": "Tabak Träber",
-      "base_url": "https://www.tabak-traeber.de",
-      "adapter": "xtcommerce",
-      "currency": "EUR",
-      "only_cigar_related": true,
-      "enabled": true,
-      "max_pages": 10
-    },
     
     {
       "id": "selected-cigars",
@@ -65,7 +55,7 @@
       "max_pages": null
     },
     {
-      "id": "cigarmust",
+     "id": "cigarmust",
       "display_name": "Cigar Must",
       "base_url": "https://cigarmust.com",
       "adapter": "prestashop",
@@ -74,7 +64,9 @@
       "enabled": true,
       "max_pages": null,
       "adapter_options": {
-        "max_scrape_products": 260
+        "max_scrape_products": 260,
+        "sitemap_url": "https://cigarmust.com/1_index_sitemap.xml"
+      }
       }
     },
     {
