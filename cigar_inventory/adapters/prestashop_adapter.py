@@ -8,7 +8,11 @@ from urllib.parse import urlparse
 from cigar_inventory.config_loader import SiteConfig
 from cigar_inventory.http_util import fetch_text
 
-from cigar_inventory.adapters.scrape_util import extract_json_ld_products, parse_sitemap_locs, price_from_ld_product
+from cigar_inventory.adapters.scrape_util import (
+    extract_json_ld_products,
+    parse_sitemap_locs,
+    price_from_ld_product,
+)
 
 
 def _is_product_url(loc: str, base_netloc: str) -> bool:
@@ -16,94 +20,253 @@ def _is_product_url(loc: str, base_netloc: str) -> bool:
         u = urlparse(loc)
     except Exception:
         return False
-        
+
     if u.netloc != base_netloc:
         return False
+
     path = (u.path or "").lower()
 
-    
-    if path.endswith((".jpg", ".png", ".jpeg", ".gif", ".webp")):
+    # 排除图片
+    if path.endswith(
+        (".jpg", ".png", ".jpeg", ".gif", ".webp", ".svg")
+    ):
         return False
 
-    # 排除分类页
-    if "/category" in path:
+    # 排除明显分类页
+    exclude_words = [
+        "/category",
+        "/categories",
+        "/manufacturer",
+        "/brand",
+        "/brands",
+        "/search",
+        "/login",
+    ]
+
+    for word in exclude_words:
+        if word in path:
+            return False
+
+    parts = [x for x in path.strip("/").split("/") if x]
+
+    # 太短一般不是商品
+    if len(parts) < 2:
         return False
 
-    if "/manufacturer" in path:
-        return False
-
-    if "/brand" in path:
-        return False
-
-    # 商品一般至少两级目录
-    return len(path.strip("/").split("/")) >= 2
-
+    return True
 
 
 def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
     base = site.base_url.rstrip("/")
     netloc = urlparse(base).netloc
-    max_items = int(site.adapter_options.get("max_scrape_products") or 280)
-    sm_url = str(site.adapter_options.get("sitemap_url") or f"{base}/sitemap.xml")
+
+    max_items = int(
+        site.adapter_options.get("max_scrape_products") or 280
+    )
+
+    sm_url = str(
+        site.adapter_options.get("sitemap_url")
+        or f"{base}/sitemap.xml"
+    )
+
+    print(f"[{site.display_name}] sitemap: {sm_url}")
+
     try:
         xml = fetch_text(sm_url, timeout=60.0)
-    except Exception:
+
+    except Exception as e:
+        print(
+            f"[{site.display_name}] sitemap读取失败: {e}"
+        )
         return
+
+
     locs = parse_sitemap_locs(xml)
-    print(f"{site.display_name}: sitemap 共解析到 {len(locs)} 个URL")
+
+    print(
+        f"[{site.display_name}] sitemap初始URL数量: {len(locs)}"
+    )
+
+
+    # sitemap index
     if not locs and "<sitemapindex" in xml.lower():
+
+        print(
+            f"[{site.display_name}] 检测到 sitemap index"
+        )
+
         try:
             root = ET.fromstring(xml)
+
         except ET.ParseError:
+            print(
+                f"[{site.display_name}] sitemap XML解析失败"
+            )
             return
-        ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+
+
+        ns = {
+            "sm": "http://www.sitemaps.org/schemas/sitemap/0.9"
+        }
+
+        sitemap_links = []
+
         for loc_el in root.findall(".//sm:loc", ns):
-            if loc_el.text and "product" in loc_el.text.lower():
-                try:
-                    sub = fetch_text(loc_el.text.strip(), timeout=60.0)
-                    locs.extend(parse_sitemap_locs(sub))
-                except Exception:
-                    continue
+
+            if loc_el.text:
+                sitemap_links.append(
+                    loc_el.text.strip()
+                )
+
+
+        print(
+            f"[{site.display_name}] 子sitemap数量: {len(sitemap_links)}"
+        )
+
+
+        for sub_url in sitemap_links:
+
+            try:
+
+                sub_xml = fetch_text(
+                    sub_url,
+                    timeout=60.0
+                )
+
+                sub_locs = parse_sitemap_locs(
+                    sub_xml
+                )
+
+                locs.extend(sub_locs)
+
+
+            except Exception as e:
+
+                print(
+                    f"[{site.display_name}] 子sitemap失败: {e}"
+                )
+
+
+    print(
+        f"[{site.display_name}] 最终URL数量: {len(locs)}"
+    )
+
+
     seen: set[str] = set()
-    n = 0
-    for i, loc in enumerate(locs):
-        if i < 30:
-            print("检查:", loc)
-        if n >= max_items:
+
+    count = 0
+    checked = 0
+    filtered = 0
+
+
+    for loc in locs:
+
+        if count >= max_items:
             break
 
-        if not _is_product_url(loc, netloc):
-            if i < 30:
-                print("过滤:", loc)
+
+        checked += 1
+
+
+        if checked <= 20:
+            print(
+                f"[{site.display_name}] 检查URL: {loc}"
+            )
+
+
+        if not _is_product_url(
+            loc,
+            netloc
+        ):
+
+            filtered += 1
+
+            if checked <= 20:
+                print(
+                    f"[{site.display_name}] 过滤URL"
+                )
+
             continue
-    
+
+
         if loc in seen:
             continue
+
+
         seen.add(loc)
+
+
         try:
-            html = fetch_text(loc, timeout=35.0)
-        except Exception:
+
+            html = fetch_text(
+                loc,
+                timeout=35.0
+            )
+
+        except Exception as e:
+
+            if checked <= 20:
+                print(
+                    f"[{site.display_name}] 页面读取失败: {e}"
+                )
+
             continue
-        title_m = re.search(r"<h1[^>]*>([^<]+)</h1>", html, re.I)
-        title = title_m.group(1).strip() if title_m else loc.rsplit("/", 1)[-1]
-        handle = re.sub(r"[^\w\-]+", "-", urlparse(loc).path.strip("/").replace("/", "-"))[
-            :120
-        ] or "item"
+
+
+
+        title_m = re.search(
+            r"<h1[^>]*>([^<]+)</h1>",
+            html,
+            re.I,
+        )
+
+
+        title = (
+            title_m.group(1).strip()
+            if title_m
+            else loc.rsplit("/", 1)[-1]
+        )
+
+
+        handle = re.sub(
+            r"[^\w\-]+",
+            "-",
+            urlparse(loc)
+            .path
+            .strip("/")
+            .replace("/", "-"),
+        )[:120] or "item"
+
+
         price_s = "0"
         available = True
+
+
         for ld in extract_json_ld_products(html):
+
             got = price_from_ld_product(ld)
+
             if got:
+
                 price_s, available = got
                 break
+
+
+
         if price_s == "0":
+
             pm = re.search(
                 r'property="product:price:amount"\s+content="([\d.]+)"',
                 html,
                 re.I,
             )
+
             if pm:
+
                 price_s = pm.group(1)
+
+
+
         variant = {
             "id": None,
             "title": "Default Title",
@@ -115,9 +278,18 @@ def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
             "available": available,
             "inventory_quantity": None,
         }
-        n += 1
-        print("找到商品:", title)
+
+
+        count += 1
+
+
+        print(
+            f"[{site.display_name}] 找到商品 {count}: {title}"
+        )
+
+
         yield {
+
             "title": title,
             "handle": handle,
             "body_html": "",
@@ -125,6 +297,17 @@ def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
             "product_type": "PrestaShop",
             "tags": ["cigar"],
             "__cigar_section__": True,
-            "variants": [variant],
+            "variants": [
+                variant
+            ],
             "__product_url__": loc,
+
         }
+
+
+    print(
+        f"[{site.display_name}] 完成: "
+        f"检查{checked} URL, "
+        f"过滤{filtered}, "
+        f"商品{count}"
+    )
