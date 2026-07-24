@@ -465,37 +465,19 @@ def iter_products(
                 html,
                 re.I
             )
-
-
             if pm:
-
                 price_s = pm.group(1)
-
-
-
         variant = {
-
             "id": None,
-
             "title": "Default Title",
-
             "option1": "默认",
-
             "option2": None,
-
             "option3": None,
-
             "sku": "",
-
             "price": price_s,
-
             "available": available,
-
             "inventory_quantity": None,
-
         }
-
-
 
         if not is_cuban_cigar_product({
             "title": title,
@@ -505,16 +487,10 @@ def iter_products(
             "tags": ["cigar"],
         }):
             continue
-
-
-       count += 1
-       print(
-           f"[{site.display_name}] 商品 {count}: {title}"
-       )
-
-
-
-
+        count += 1
+        print(
+            f"[{site.display_name}] 商品 {count}: {title}"
+        )
         yield {
 
             "title": title,
