@@ -497,13 +497,21 @@ def iter_products(
 
 
 
-        count += 1
+        if not is_cuban_cigar_product({
+            "title": title,
+
+            "vendor": "",
+
+            "tags": ["cigar"],
+        }):
+            continue
 
 
+       count += 1
+       print(
+           f"[{site.display_name}] 商品 {count}: {title}"
+       )
 
-        print(
-            f"[{site.display_name}] 商品 {count}: {title}"
-        )
 
 
 
