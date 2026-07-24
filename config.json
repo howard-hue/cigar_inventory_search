@@ -64,7 +64,7 @@
       "enabled": true,
       "max_pages": null,
       "adapter_options": {
-        "max_scrape_products": 260,
+        "max_scrape_products": 260
       }
     },
     {
@@ -99,7 +99,6 @@
     "Punch",
     "Quai d'Orsay",
     "Ramón Allones"
-
 
   ],
   "tariff_rate": 0.5,
