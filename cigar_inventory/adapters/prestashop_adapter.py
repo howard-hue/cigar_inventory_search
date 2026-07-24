@@ -126,8 +126,19 @@ def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
             f"{base}/sitemap.xml",
             f"{base}/sitemap_index.xml",
             f"{base}/1_index_sitemap.xml",
-            f"{base}/1_en_0_sitemap.xml",
-            f"{base}/1_products_1.xml",
+            f"{base}/sitemap.xml.gz",
+            f"{base}/sitemap/sitemap.xml",
+            f"{base}/modules/gsitemap/sitemap.xml",
+
+            f"{base}/modules/gsitemap/sitemap-1.xml",
+    
+            f"{base}/modules/gsitemap/sitemap-products.xml",
+
+
+   
+            f"{base}/en/sitemap.xml",
+    
+            f"{base}/it/sitemap.xml",
         ]
     )
 
