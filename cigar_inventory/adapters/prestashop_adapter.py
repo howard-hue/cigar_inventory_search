@@ -15,7 +15,10 @@ from cigar_inventory.adapters.scrape_util import (
 )
 
 
-def _is_product_url(loc: str, base_netloc: str) -> bool:
+def _is_product_url(
+    loc: str,
+    base_netloc: str
+) -> bool:
 
     try:
         u = urlparse(loc)
@@ -31,7 +34,7 @@ def _is_product_url(loc: str, base_netloc: str) -> bool:
     path = (u.path or "").lower()
 
 
-    # 排除静态资源
+    # 静态资源过滤
 
     if path.endswith(
         (
@@ -48,6 +51,8 @@ def _is_product_url(loc: str, base_netloc: str) -> bool:
         return False
 
 
+    # 后台/搜索/购物车过滤
+
     exclude_words = [
         "/category",
         "/categories",
@@ -58,12 +63,15 @@ def _is_product_url(loc: str, base_netloc: str) -> bool:
         "/login",
         "/cart",
         "/checkout",
+        "/account",
     ]
 
 
-    for w in exclude_words:
-        if w in path:
+    for word in exclude_words:
+
+        if word in path:
             return False
+
 
 
     parts = [
@@ -72,11 +80,13 @@ def _is_product_url(loc: str, base_netloc: str) -> bool:
     ]
 
 
-    if len(parts) < 2:
+    # 空路径
+    if len(parts) < 1:
         return False
 
 
-    # Prestashop 商品特征
+
+    # Prestashop 商品判断
 
     if ".html" in path:
         return True
@@ -86,7 +96,10 @@ def _is_product_url(loc: str, base_netloc: str) -> bool:
         return True
 
 
-    if re.search(r"/\d+-", path):
+    if re.search(
+        r"/\d+-",
+        path
+    ):
         return True
 
 
@@ -94,7 +107,9 @@ def _is_product_url(loc: str, base_netloc: str) -> bool:
 
 
 
-def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
+def iter_products(
+    site: SiteConfig
+) -> Iterator[dict[str, Any]]:
 
 
     base = site.base_url.rstrip("/")
@@ -109,6 +124,10 @@ def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
     )
 
 
+    # =========================
+    # sitemap 获取
+    # =========================
+
     sitemap_candidates = []
 
 
@@ -121,23 +140,17 @@ def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
         sitemap_candidates.append(custom)
 
 
+
     sitemap_candidates.extend(
         [
             f"{base}/sitemap.xml",
             f"{base}/sitemap_index.xml",
             f"{base}/1_index_sitemap.xml",
             f"{base}/sitemap.xml.gz",
-            f"{base}/sitemap/sitemap.xml",
             f"{base}/modules/gsitemap/sitemap.xml",
-
             f"{base}/modules/gsitemap/sitemap-1.xml",
-    
             f"{base}/modules/gsitemap/sitemap-products.xml",
-
-
-   
             f"{base}/en/sitemap.xml",
-    
             f"{base}/it/sitemap.xml",
         ]
     )
@@ -145,6 +158,7 @@ def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
 
     xml = None
     used = None
+
 
 
     for sm in sitemap_candidates:
@@ -155,12 +169,15 @@ def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
                 f"[{site.display_name}] 尝试 sitemap: {sm}"
             )
 
+
             xml = fetch_text(
                 sm,
                 timeout=60
             )
 
+
             used = sm
+
             break
 
 
@@ -172,101 +189,184 @@ def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
 
 
 
+    locs = []
+
+
+
+    # =========================
+    # 没有 sitemap
+    # 首页扫描
+    # =========================
+
     if xml is None:
 
+
         print(
-            f"[{site.display_name}] 无 sitemap"
+            f"[{site.display_name}] 无 sitemap，尝试首页扫描"
         )
-
-        return
-
-
-
-    print(
-        f"[{site.display_name}] 使用 sitemap: {used}"
-    )
-
-
-    locs = parse_sitemap_locs(xml)
-
-
-    print(
-        f"[{site.display_name}] URL数量: {len(locs)}"
-    )
-
-
-    # sitemap index
-
-    if (
-        not locs
-        and "<sitemapindex" in xml.lower()
-    ):
 
 
         try:
 
-            root = ET.fromstring(xml)
+            home_html = fetch_text(
+                base,
+                timeout=60
+            )
 
 
-        except ET.ParseError:
+        except Exception as e:
+
+            print(
+                f"[{site.display_name}] 首页读取失败: {e}"
+            )
 
             return
 
 
-        ns = {
-            "sm":
-            "http://www.sitemaps.org/schemas/sitemap/0.9"
-        }
 
-
-        children = []
-
-
-        for e in root.findall(
-            ".//sm:loc",
-            ns
-        ):
-
-            if e.text:
-                children.append(
-                    e.text.strip()
-                )
-
-
-        print(
-            f"[{site.display_name}] 子sitemap:{len(children)}"
+        links = re.findall(
+            r'href=["\']([^"\']+)["\']',
+            home_html,
+            re.I
         )
 
 
-        for child in children:
+        for link in links:
+
+
+            if link.startswith("/"):
+
+                link = base + link
+
+
 
             try:
 
-                sub = fetch_text(
-                    child,
-                    timeout=60
-                )
+                if _is_product_url(
+                    link,
+                    netloc
+                ):
 
-                locs.extend(
-                    parse_sitemap_locs(sub)
-                )
+                    locs.append(link)
 
 
-            except Exception as e:
+            except Exception:
 
-                print(
-                    f"子sitemap失败:{e}"
-                )
+                continue
+
+
+
+        print(
+            f"[{site.display_name}] 首页发现商品候选URL: {len(locs)}"
+        )
+
+
+
+    else:
+
+
+        print(
+            f"[{site.display_name}] 使用 sitemap: {used}"
+        )
+
+
+        locs = parse_sitemap_locs(xml)
+
+
+        print(
+            f"[{site.display_name}] sitemap URL数量: {len(locs)}"
+        )
+
+
+
+        # sitemap index
+
+        if (
+            not locs
+            and "<sitemapindex" in xml.lower()
+        ):
+
+
+            try:
+
+                root = ET.fromstring(xml)
+
+
+            except ET.ParseError:
+
+                return
+
+
+
+            ns = {
+                "sm":
+                "http://www.sitemaps.org/schemas/sitemap/0.9"
+            }
+
+
+
+            children = []
+
+
+            for e in root.findall(
+                ".//sm:loc",
+                ns
+            ):
+
+                if e.text:
+
+                    children.append(
+                        e.text.strip()
+                    )
+
+
+
+            print(
+                f"[{site.display_name}] 子sitemap数量: {len(children)}"
+            )
+
+
+
+            for child in children:
+
+
+                try:
+
+                    sub_xml = fetch_text(
+                        child,
+                        timeout=60
+                    )
+
+
+                    locs.extend(
+                        parse_sitemap_locs(
+                            sub_xml
+                        )
+                    )
+
+
+                except Exception as e:
+
+                    print(
+                        f"[{site.display_name}] 子sitemap失败: {e}"
+                    )
+
 
 
     print(
-        f"[{site.display_name}] 最终URL:{len(locs)}"
+        f"[{site.display_name}] 最终URL数量: {len(locs)}"
     )
 
 
-    seen=set()
 
-    count=0
+    # =========================
+    # 抓商品
+    # =========================
+
+    seen = set()
+
+    count = 0
+
 
 
     for loc in locs:
@@ -276,18 +376,24 @@ def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
             break
 
 
+
         if not _is_product_url(
             loc,
             netloc
         ):
+
             continue
+
 
 
         if loc in seen:
+
             continue
 
 
+
         seen.add(loc)
+
 
 
         try:
@@ -304,56 +410,95 @@ def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
 
 
 
+        # 标题
+
         title_m = re.search(
             r"<h1[^>]*>(.*?)</h1>",
             html,
-            re.I|re.S
+            re.I | re.S
         )
 
 
-        title = (
-            re.sub(
+        if title_m:
+
+            title = re.sub(
                 "<.*?>",
                 "",
                 title_m.group(1)
             ).strip()
-            if title_m
-            else loc.split("/")[-1]
-        )
+
+        else:
+
+            title = loc.split("/")[-1]
 
 
-        price_s="0"
 
-        available=True
+        price_s = "0"
 
+        available = True
+
+
+
+        # JSON-LD价格
 
         for ld in extract_json_ld_products(html):
 
+
             got = price_from_ld_product(ld)
+
 
             if got:
 
-                price_s,available = got
+                price_s, available = got
+
                 break
 
 
 
-        variant={
+        # meta价格备用
 
-            "id":None,
-            "title":"Default Title",
-            "option1":"默认",
-            "option2":None,
-            "option3":None,
-            "sku":"",
-            "price":price_s,
-            "available":available,
-            "inventory_quantity":None,
+        if price_s == "0":
+
+
+            pm = re.search(
+                r'property="product:price:amount"\s+content="([\d.]+)"',
+                html,
+                re.I
+            )
+
+
+            if pm:
+
+                price_s = pm.group(1)
+
+
+
+        variant = {
+
+            "id": None,
+
+            "title": "Default Title",
+
+            "option1": "默认",
+
+            "option2": None,
+
+            "option3": None,
+
+            "sku": "",
+
+            "price": price_s,
+
+            "available": available,
+
+            "inventory_quantity": None,
 
         }
 
 
+
         count += 1
+
 
 
         print(
@@ -361,19 +506,33 @@ def iter_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
         )
 
 
+
         yield {
 
-            "title":title,
-            "handle":loc[-120:],
-            "body_html":"",
-            "vendor":"",
-            "product_type":"PrestaShop",
-            "tags":["cigar"],
-            "__cigar_section__":True,
-            "variants":[variant],
-            "__product_url__":loc,
+            "title": title,
+
+            "handle": loc[-120:],
+
+            "body_html": "",
+
+            "vendor": "",
+
+            "product_type": "PrestaShop",
+
+            "tags": [
+                "cigar"
+            ],
+
+            "__cigar_section__": True,
+
+            "variants": [
+                variant
+            ],
+
+            "__product_url__": loc,
 
         }
+
 
 
     print(
