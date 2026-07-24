@@ -7,13 +7,66 @@ from urllib.parse import urlparse
 
 from cigar_inventory.config_loader import SiteConfig
 from cigar_inventory.http_util import fetch_text
-from cigar_inventory.cuban_filter import is_cuban_cigar_product
+
 from cigar_inventory.adapters.scrape_util import (
     extract_json_ld_products,
     parse_sitemap_locs,
     price_from_ld_product,
 )
+CUBAN_CIGAR_BRANDS = [
+    "cohiba",
+    "montecristo",
+    "partagas",
+    "romeo y julieta",
+    "h. upmann",
+    "h upmann",
+    "upmann",
+    "hoyo",
+    "hoyo de monterrey",
+    "bolivar",
+    "trinidad",
+    "punch",
+    "quai d'orsay",
+    "quai d’orsay",
+    "ramon allones",
+    "ramón allones",
+    "san cristobal",
+    "san cristóbal",
+    "juan lopez",
+    "diplomaticos",
+    "diplomáticos",
+    "por larranaga",
+    "por larrañaga",
+    "quintero",
+    "rafael gonzalez",
+    "rafael gonzález",
+    "vegueros",
+    "fonseca",
+]
 
+
+def is_cuban_cigar_product(product: dict[str, Any]) -> bool:
+    title = str(product.get("title") or "").lower()
+    vendor = str(product.get("vendor") or "").lower()
+
+    tags = " ".join(
+        str(x)
+        for x in (product.get("tags") or [])
+    ).lower()
+
+    text = " ".join(
+        [
+            title,
+            vendor,
+            tags,
+        ]
+    )
+
+    for brand in CUBAN_CIGAR_BRANDS:
+        if brand in text:
+            return True
+
+    return False
 
 def _is_product_url(
     loc: str,
