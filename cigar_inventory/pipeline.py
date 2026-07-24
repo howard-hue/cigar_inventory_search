@@ -20,7 +20,13 @@ from cigar_inventory.filters import (
 )
 from cigar_inventory.fx import fetch_rate_to_cny
 from cigar_inventory.stick_count import extract_cigar_stick_count
-from cigar_inventory.shopify import is_cigar_related, product_url, variant_label
+from cigar_inventory.shopify import (
+    is_cigar_related,
+    product_url,
+    variant_label,
+)
+
+
 # 只保留古巴雪茄品牌（Habanos）
 CUBAN_CIGAR_BRANDS = [
     "cohiba",
@@ -150,17 +156,46 @@ def _append_rows_for_product(
     rows: list[ExportRow],
 ) -> None:
     flt = cfg.filters
-    if site.only_cigar_related:
-        if not is_cigar_related(p):
-            return
-        if not is_cuban_cigar_product(p):
-            return
 
-    if not matches_brands(p, flt.brands):
+
+    # ==========================
+    # 1. 必须是雪茄
+    # ==========================
+
+    if not is_cigar_related(p):
         return
-    if not matches_product_keywords(p, flt.product_keywords):
+
+
+    # ==========================
+    # 2. 必须是古巴雪茄
+    # ==========================
+
+    if not is_cuban_cigar_product(p):
         return
-    if not matches_handles(p, flt.product_handles):
+
+
+    # ==========================
+    # 3. 用户配置过滤
+    # ==========================
+
+    if not matches_brands(
+        p,
+        flt.brands
+    ):
+        return
+
+
+    if not matches_product_keywords(
+        p,
+        flt.product_keywords
+    ):
+        return
+
+
+    if not matches_handles(
+        p,
+        flt.product_handles
+    ):
         return
 
     handle = str(p.get("handle") or "")
