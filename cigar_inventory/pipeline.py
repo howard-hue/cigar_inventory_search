@@ -21,7 +21,50 @@ from cigar_inventory.filters import (
 from cigar_inventory.fx import fetch_rate_to_cny
 from cigar_inventory.stick_count import extract_cigar_stick_count
 from cigar_inventory.shopify import is_cigar_related, product_url, variant_label
+# 只保留古巴雪茄品牌（Habanos）
+CUBAN_CIGAR_BRANDS = [
+    "cohiba",
+    "montecristo",
+    "partagas",
+    "romeo y julieta",
 
+    "h. upmann",
+    "h upmann",
+    "upmann",
+
+    "hoyo",
+    "hoyo de monterrey",
+
+    "bolivar",
+    "trinidad",
+    "punch",
+
+    "quai d'orsay",
+    "quai d’orsay",
+
+    "ramon allones",
+    "ramón allones",
+
+    "san cristobal",
+    "san cristóbal",
+
+    "juan lopez",
+
+    "diplomaticos",
+    "diplomáticos",
+
+    "por larranaga",
+    "por larrañaga",
+
+    "quintero",
+
+    "rafael gonzalez",
+    "rafael gonzález",
+
+    "vegueros",
+
+    "fonseca",
+]
 
 @dataclass
 class ExportRow:
@@ -37,6 +80,40 @@ class ExportRow:
     单支人民币税后: str
     链接: str
 
+def is_cuban_cigar_product(p: dict[str, Any]) -> bool:
+    """
+    判断商品是否属于古巴雪茄品牌
+    """
+
+    title = str(
+        p.get("title") or ""
+    ).lower()
+
+    vendor = str(
+        p.get("vendor") or ""
+    ).lower()
+
+    tags = " ".join(
+        str(x)
+        for x in (p.get("tags") or [])
+    ).lower()
+
+
+    text = " ".join(
+        [
+            title,
+            vendor,
+            tags,
+        ]
+    )
+
+
+    for brand in CUBAN_CIGAR_BRANDS:
+        if brand in text:
+            return True
+
+
+    return False
 
 def _parse_price(s: str) -> Decimal:
     return Decimal(str(s).strip() or "0")
@@ -73,8 +150,12 @@ def _append_rows_for_product(
     rows: list[ExportRow],
 ) -> None:
     flt = cfg.filters
-    if site.only_cigar_related and not is_cigar_related(p):
-        return
+    if site.only_cigar_related:
+        if not is_cigar_related(p):
+            return
+        if not is_cuban_cigar_product(p):
+            return
+
     if not matches_brands(p, flt.brands):
         return
     if not matches_product_keywords(p, flt.product_keywords):
