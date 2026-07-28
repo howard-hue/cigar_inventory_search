@@ -28,8 +28,7 @@ def fetch_rate_to_cny(
     返回:
     (1单位外币=CNY, 日期, 原始JSON)
 
-    优先使用 Frankfurter
-    失败使用备用汇率
+    使用固定汇率（避免API请求失败）
     """
 
     cur = from_currency.strip().upper()
@@ -37,77 +36,15 @@ def fetch_rate_to_cny(
     if cur == "CNY":
         return Decimal("1"), "", {}
 
-
-    qs = urlencode({
-        "from": cur,
-        "to": "CNY"
-    })
-
-    url = f"{FRANKFURTER_LATEST}?{qs}"
-
-
-    last_error = None
-
-
-    # 重试3次
-    for attempt in range(3):
-
-        try:
-
-            data = get_json(
-                url,
-                timeout=10.0
-            )
-
-
-            date = str(
-                data.get("date") or ""
-            )
-
-            rates = data.get("rates") or {}
-
-
-            if "CNY" in rates:
-
-                rate = Decimal(
-                    str(rates["CNY"])
-                )
-
-                return rate, date, data
-
-
-        except Exception as e:
-
-            last_error = e
-
-            print(
-                f"[汇率] {cur} 请求失败 "
-                f"第 {attempt+1}/3 次: {e}"
-            )
-
-            time.sleep(3)
-
-
-
-    # API失败，使用备用
     if cur in FALLBACK_RATES:
-
-        print(
-            f"[汇率] 使用备用汇率: "
-            f"1 {cur} = {FALLBACK_RATES[cur]} CNY"
-        )
-
         return (
             FALLBACK_RATES[cur],
-            "fallback",
-            {
-                "error": str(last_error)
-            }
+            "fixed",
+            {},
         )
 
-
     raise RuntimeError(
-        f"无法获取 {cur}->CNY 汇率: {last_error}"
+        f"未知货币 {cur}，请在 FALLBACK_RATES 中添加汇率"
     )
 
 
