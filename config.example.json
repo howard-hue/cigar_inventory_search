@@ -30,8 +30,6 @@
       "enabled": true,
       "max_pages": 8
     },
-
-
     {
       "id": "selected-cigars",
       "display_name": "Selected Cigars",
@@ -88,7 +86,6 @@
       "enabled": true,
       "max_pages": null
     }
-
   ],
   "filters": {
     "brands": [],
@@ -102,7 +99,6 @@
     "Montecristo",
     "Partagas",
     "Romeo y Julieta",
-
     "H. Upmann",
     "Hoyo",
     "Bolivar",
@@ -110,8 +106,7 @@
     "Punch",
     "Quai d'Orsay",
     "Ramón Allones",
-    "Ramon Allones",
-
+    "Ramon Allones"
   ],
   "tariff_rate": 0.5,
   "include_unavailable": false
