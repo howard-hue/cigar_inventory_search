@@ -24,16 +24,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Install Playwright
-        run: |
-          playwright install chromium
-          
-      - name: Cache inventory data
-        uses: actions/cache@v4
-        with:
-          path: data
-          key: inventory-latest
-
       - name: Run Inventory Monitor
         run: |
           python run_inventory.py
@@ -44,10 +34,6 @@ jobs:
         run: |
           python -m notifier.main
 
-      - name: List Generated Files
-        run: |
-          find . -type f | sort
-
       - name: Upload Report
         uses: actions/upload-artifact@v4
         with:
@@ -55,3 +41,10 @@ jobs:
           path: |
             inventory_*.csv
             inventory_*.html
+
+      - name: Save inventory data
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add data/latest.json
+          git diff --cached --quiet || git commit -m "chore: update inventory data" && git push
