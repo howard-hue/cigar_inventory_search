@@ -30,7 +30,6 @@
       "enabled": true,
       "max_pages": 8
     },
-    
     {
       "id": "selected-cigars",
       "display_name": "Selected Cigars",
@@ -55,7 +54,7 @@
       "max_pages": null
     },
     {
-     "id": "cigarmust",
+      "id": "cigarmust",
       "display_name": "Cigar Must",
       "base_url": "https://cigarmust.com",
       "adapter": "prestashop",
@@ -76,8 +75,17 @@
       "only_cigar_related": true,
       "enabled": true,
       "max_pages": null
+    },
+    {
+      "id": "siglomundo",
+      "display_name": "Siglo Mundo",
+      "base_url": "https://siglomundo.ch",
+      "adapter": "shopify",
+      "currency": "CHF",
+      "only_cigar_related": true,
+      "enabled": true,
+      "max_pages": null
     }
-   
   ],
   "filters": {
     "brands": [],
@@ -91,15 +99,14 @@
     "Montecristo",
     "Partagas",
     "Romeo y Julieta",
-
     "H. Upmann",
     "Hoyo",
     "Bolivar",
     "Trinidad",
     "Punch",
     "Quai d'Orsay",
+    "Ramón Allones",
     "Ramon Allones"
-
   ],
   "tariff_rate": 0.5,
   "include_unavailable": false
