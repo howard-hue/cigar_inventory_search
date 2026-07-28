@@ -27,6 +27,12 @@ jobs:
       - name: Install Playwright
         run: |
           playwright install chromium
+          
+      - name: Cache inventory data
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: inventory-latest
 
       - name: Run Inventory Monitor
         run: |
