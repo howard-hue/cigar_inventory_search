@@ -30,7 +30,6 @@ from cigar_inventory.shopify import (
 
 # 只保留古巴雪茄品牌（Habanos）
 CUBAN_CIGAR_BRANDS = [
-    "cohiba",
     "montecristo",
     "partagas",
     "romeo y julieta",
