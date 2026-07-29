@@ -21,7 +21,7 @@ def send_new_products(products):
         "content": f"## 🎉 检测到 **{len(products)}** 个新品"
     })
 
-    for item in products[:10]:
+    for item in products:
 
         elements.append({
             "tag": "hr"
