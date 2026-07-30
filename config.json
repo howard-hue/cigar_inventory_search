@@ -85,16 +85,6 @@
       "only_cigar_related": true,
       "enabled": true,
       "max_pages": null
-    },
-    {
-      "id": "lcdh-geneve",
-      "display_name": "La Casa del Habano Geneve",
-      "base_url": "https://lacasadelhabano-geneve.com",
-      "adapter": "shopify",
-      "currency": "CHF",
-      "only_cigar_related": true,
-      "enabled": true,
-      "max_pages": null
     }
   ],
   "filters": {
