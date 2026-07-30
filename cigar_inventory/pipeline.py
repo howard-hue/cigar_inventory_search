@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any
 
 from cigar_inventory.adapters import iter_normalized_products
-import requests as _requests
 from cigar_inventory.branding import resolve_brand
 from cigar_inventory.config_loader import AppConfig, SiteConfig
 from cigar_inventory.filters import (
@@ -30,6 +29,7 @@ from cigar_inventory.shopify import (
 
 # 只保留古巴雪茄品牌（Habanos）
 CUBAN_CIGAR_BRANDS = [
+    "cohiba",
     "montecristo",
     "partagas",
     "romeo y julieta",
@@ -280,11 +280,6 @@ def collect_rows(cfg: AppConfig) -> list[ExportRow]:
         except json.JSONDecodeError as e:
             print(
                 f"[跳过] {site.display_name} ({site.id}): JSON 解析失败 ({e})",
-                file=sys.stderr,
-            )
-        except _requests.exceptions.RequestException as e:
-            print(
-                f"[跳过] {site.display_name} ({site.id}): 请求失败 {e.__class__.__name__}",
                 file=sys.stderr,
             )
 
