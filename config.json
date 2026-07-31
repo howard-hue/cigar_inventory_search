@@ -85,6 +85,16 @@
       "only_cigar_related": true,
       "enabled": true,
       "max_pages": null
+    },
+    {
+      "id": "alpscigar",
+      "display_name": "Alps Cigar",
+      "base_url": "https://alpscigar.com",
+      "adapter": "alpscigar",
+      "currency": "CHF",
+      "only_cigar_related": true,
+      "enabled": true,
+      "max_pages": 35
     }
   ],
   "filters": {
