@@ -210,10 +210,12 @@ def _append_rows_for_product(
         if not isinstance(v, dict):
             continue
         available = bool(v.get("available"))
-        if not cfg.include_unavailable and not available:
+        if not available:
             continue
 
         price_orig = _parse_price(str(v.get("price") or "0"))
+        if price_orig <= 0:
+            continue
         if cur == "CNY":
             pre_cny = price_orig
         else:
