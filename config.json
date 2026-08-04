@@ -92,7 +92,10 @@
     "product_keywords": [],
     "product_handles": [],
     "price_cny_pre_tax_min": null,
-    "price_cny_pre_tax_max": 8000
+    "price_cny_pre_tax_max": 8000,
+    "exclude_brands": [
+      "Montecristo"
+    ]
   },
   "brand_hints": [
     "Cohiba",

@@ -23,6 +23,7 @@ class SiteConfig:
 @dataclass
 class FilterConfig:
     brands: list[str] = field(default_factory=list)
+    exclude_brands: list[str] = field(default_factory=list)
     product_keywords: list[str] = field(default_factory=list)
     product_handles: list[str] = field(default_factory=list)
     price_cny_pre_tax_min: Decimal | None = None
@@ -61,6 +62,7 @@ class AppConfig:
         pcmax = f.get("price_cny_pre_tax_max")
         filters = FilterConfig(
             brands=[str(x) for x in (f.get("brands") or [])],
+            exclude_brands=[str(x) for x in (f.get("exclude_brands") or [])],
             product_keywords=[str(x) for x in (f.get("product_keywords") or [])],
             product_handles=[str(x) for x in (f.get("product_handles") or [])],
             price_cny_pre_tax_min=Decimal(str(pcmin)) if pcmin is not None else None,

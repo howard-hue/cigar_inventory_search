@@ -14,14 +14,25 @@ def send_new_products(products):
         print("没有配置 FEISHU_WEBHOOK")
         return
 
+    # 限制最多通知 20 个新品，避免超 30KB 限制
+    MAX_NOTIFY = 20
+    total = len(products)
+    to_send = products[:MAX_NOTIFY]
+
     elements = []
 
-    elements.append({
-        "tag": "markdown",
-        "content": f"## 🎉 检测到 **{len(products)}** 个新品"
-    })
+    if total > MAX_NOTIFY:
+        elements.append({
+            "tag": "markdown",
+            "content": f"## 🎉 检测到 **{total}** 个新品（显示前 {MAX_NOTIFY} 个）"
+        })
+    else:
+        elements.append({
+            "tag": "markdown",
+            "content": f"## 🎉 检测到 **{total}** 个新品"
+        })
 
-    for item in products:
+    for item in to_send:
 
         elements.append({
             "tag": "hr"

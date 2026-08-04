@@ -4,6 +4,7 @@ import csv
 import json
 import sys
 import urllib.error
+import requests.exceptions
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -20,57 +21,8 @@ from cigar_inventory.filters import (
 )
 from cigar_inventory.fx import fetch_rate_to_cny
 from cigar_inventory.stick_count import extract_cigar_stick_count
-from cigar_inventory.shopify import (
-    is_cigar_related,
-    product_url,
-    variant_label,
-)
+from cigar_inventory.shopify import is_cigar_related, product_url, variant_label
 
-
-# 只保留古巴雪茄品牌（Habanos）
-CUBAN_CIGAR_BRANDS = [
-    "cohiba",
-    "montecristo",
-    "partagas",
-    "romeo y julieta",
-
-    "h. upmann",
-    "h upmann",
-    "upmann",
-
-    "hoyo",
-    "hoyo de monterrey",
-
-    "bolivar",
-    "trinidad",
-    "punch",
-
-    "quai d'orsay",
-    "quai d’orsay",
-
-    "ramon allones",
-    "ramón allones",
-
-    "san cristobal",
-    "san cristóbal",
-
-    "juan lopez",
-
-    "diplomaticos",
-    "diplomáticos",
-
-    "por larranaga",
-    "por larrañaga",
-
-    "quintero",
-
-    "rafael gonzalez",
-    "rafael gonzález",
-
-    "vegueros",
-
-    "fonseca",
-]
 
 @dataclass
 class ExportRow:
@@ -86,40 +38,6 @@ class ExportRow:
     单支人民币税后: str
     链接: str
 
-def is_cuban_cigar_product(p: dict[str, Any]) -> bool:
-    """
-    判断商品是否属于古巴雪茄品牌
-    """
-
-    title = str(
-        p.get("title") or ""
-    ).lower()
-
-    vendor = str(
-        p.get("vendor") or ""
-    ).lower()
-
-    tags = " ".join(
-        str(x)
-        for x in (p.get("tags") or [])
-    ).lower()
-
-
-    text = " ".join(
-        [
-            title,
-            vendor,
-            tags,
-        ]
-    )
-
-
-    for brand in CUBAN_CIGAR_BRANDS:
-        if brand in text:
-            return True
-
-
-    return False
 
 def _parse_price(s: str) -> Decimal:
     return Decimal(str(s).strip() or "0")
@@ -148,6 +66,50 @@ def _product_page_url(p: dict[str, Any], handle: str, site: SiteConfig) -> str:
     return product_url(handle, site.base_url)
 
 
+def _matches_exclude_brands(p: dict[str, Any], exclude_brands: list[str]) -> bool:
+    """返回 True 表示商品命中排除品牌，应被过滤"""
+    if not exclude_brands:
+        return False
+    title = str(p.get("title") or "").lower()
+    vendor = str(p.get("vendor") or "").lower()
+    tags = " ".join(str(x) for x in (p.get("tags") or [])).lower()
+    handle = str(p.get("handle") or "").lower()
+    text = f"{title} {vendor} {tags} {handle}"
+    for brand in exclude_brands:
+        if brand.lower() in text:
+            return True
+    return False
+
+
+
+
+# 古巴雪茄品牌列表
+CUBAN_CIGAR_BRANDS = [
+    "cohiba", "montecristo", "partagas", "romeo y julieta",
+    "h. upmann", "h upmann", "upmann",
+    "hoyo", "hoyo de monterrey",
+    "bolivar", "trinidad", "punch",
+    "quai d'orsay", "quai d’orsay",
+    "ramon allones", "ramón allones",
+    "san cristobal", "san cristóbal",
+    "juan lopez", "diplomaticos", "diplomáticos",
+    "por larranaga", "por larrañaga",
+    "quintero", "rafael gonzalez", "rafael gonzález",
+    "vegueros", "fonseca",
+]
+
+
+def _is_cuban_cigar(p: dict) -> bool:
+    title = str(p.get("title") or "").lower()
+    vendor = str(p.get("vendor") or "").lower()
+    tags = " ".join(str(x) for x in (p.get("tags") or [])).lower()
+    text = f"{title} {vendor} {tags}"
+    for brand in CUBAN_CIGAR_BRANDS:
+        if brand in text:
+            return True
+    return False
+
+
 def _append_rows_for_product(
     site: SiteConfig,
     cfg: AppConfig,
@@ -157,45 +119,22 @@ def _append_rows_for_product(
 ) -> None:
     flt = cfg.filters
 
-
-    # ==========================
-    # 1. 必须是雪茄
-    # ==========================
-
-    if not is_cigar_related(p):
+    if site.only_cigar_related and not is_cigar_related(p):
         return
 
-
-    # ==========================
-    # 2. 必须是古巴雪茄
-    # ==========================
-
-    if not is_cuban_cigar_product(p):
+    # 排除品牌过滤
+    if _matches_exclude_brands(p, flt.exclude_brands):
         return
 
-
-    # ==========================
-    # 3. 用户配置过滤
-    # ==========================
-
-    if not matches_brands(
-        p,
-        flt.brands
-    ):
+    # 只保留古巴雪茄
+    if not _is_cuban_cigar(p):
         return
 
-
-    if not matches_product_keywords(
-        p,
-        flt.product_keywords
-    ):
+    if not matches_brands(p, flt.brands):
         return
-
-
-    if not matches_handles(
-        p,
-        flt.product_handles
-    ):
+    if not matches_product_keywords(p, flt.product_keywords):
+        return
+    if not matches_handles(p, flt.product_handles):
         return
 
     handle = str(p.get("handle") or "")
@@ -282,6 +221,11 @@ def collect_rows(cfg: AppConfig) -> list[ExportRow]:
         except json.JSONDecodeError as e:
             print(
                 f"[跳过] {site.display_name} ({site.id}): JSON 解析失败 ({e})",
+                file=sys.stderr,
+            )
+        except requests.exceptions.RequestException as e:
+            print(
+                f"[跳过] {site.display_name} ({site.id}): 请求失败 {e}",
                 file=sys.stderr,
             )
 
