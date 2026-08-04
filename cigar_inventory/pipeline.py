@@ -5,6 +5,7 @@ import json
 import sys
 import urllib.error
 import requests.exceptions
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 from pathlib import Path

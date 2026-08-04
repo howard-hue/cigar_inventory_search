@@ -57,7 +57,7 @@
       "id": "cigarmust",
       "display_name": "Cigar Must",
       "base_url": "https://cigarmust.com",
-      "adapter": "prestashop",
+      "adapter": "cigarmust",
       "currency": "CHF",
       "only_cigar_related": true,
       "enabled": true,

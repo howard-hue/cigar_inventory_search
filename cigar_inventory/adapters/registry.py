@@ -11,6 +11,7 @@ from cigar_inventory.adapters import shopify_adapter
 from cigar_inventory.adapters import woocommerce_adapter
 from cigar_inventory.adapters import xtcommerce_adapter
 from cigar_inventory.adapters import custom_shop_adapter
+from cigar_inventory.adapters import cigarmust_adapter
 
 
 def iter_normalized_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
@@ -30,6 +31,8 @@ def iter_normalized_products(site: SiteConfig) -> Iterator[dict[str, Any]]:
         yield from oscommerce_adapter.iter_products(site)
     elif name == "xtcommerce":
         yield from xtcommerce_adapter.iter_products(site)
+    elif name == "cigarmust":
+        yield from cigarmust_adapter.iter_products(site)
     elif name in ("custom", "custom_shop", "jimdo"):
         yield from custom_shop_adapter.iter_products(site)
     else:
