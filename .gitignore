@@ -5,3 +5,13 @@ inventory_latest.csv
 inventory_run.csv
 **/__pycache__/
 *.py[cod]
+
+# macOS
+.DS_Store
+
+# logs
+*.log
+
+# inventory output
+inventory_*.csv
+inventory_*.html
